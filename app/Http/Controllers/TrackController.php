@@ -18,13 +18,14 @@ class TrackController extends Controller
         // 2. Get Location Data
         $locationData = Location::get(trim($ip));
 
-        // 3. Insert into Database (ISP કોલમ સાથે)
+        // 3. Insert into Database (Null-safe checking સાથે)
         DB::table('clicks')->insert([
             'ip'         => trim($ip),
             'device'     => $request->header('User-Agent'),
-            'isp'        => $locationData ? $locationData->isp : 'Unknown', // આ લાઈન એડ કરી છે
-            'city'       => $locationData ? $locationData->cityName : 'Unknown',
-            'country'    => $locationData ? $locationData->countryName : 'Unknown',
+            // ?? 'Unknown' વાપરવાથી જો ISP ના મળે તો એરર નહીં આવે
+            'isp'        => $locationData ? ($locationData->isp ?? 'Unknown') : 'Unknown', 
+            'city'       => $locationData ? ($locationData->cityName ?? 'Unknown') : 'Unknown',
+            'country'    => $locationData ? ($locationData->countryName ?? 'Unknown') : 'Unknown',
             'latitude'   => $locationData ? $locationData->latitude : null,
             'longitude'  => $locationData ? $locationData->longitude : null,
             'clicked_at' => now(),
@@ -45,11 +46,11 @@ class TrackController extends Controller
                 $q->where('ip', 'LIKE', "%$search%")
                   ->orWhere('city', 'LIKE', "%$search%")
                   ->orWhere('country', 'LIKE', "%$search%")
-                  ->orWhere('isp', 'LIKE', "%$search%"); // સર્ચમાં ISP પણ એડ કર્યું
+                  ->orWhere('isp', 'LIKE', "%$search%"); 
             });
         }
 
-        $data = $query->latest()->get();
+        $data = $query->orderBy('clicked_at', 'desc')->get();
         return view('dashboard', compact('data'));
     }
 
@@ -61,7 +62,8 @@ class TrackController extends Controller
 
     public function destroyAll()
     {
-        DB::table('clicks')->truncate();
+        // Render પર truncate માં તકલીફ પડે તો delete() વાપરી શકાય
+        DB::table('clicks')->delete(); 
         return back()->with('success', 'બધો જ ડેટા ડિલીટ થઈ ગયો!');
     }
 }

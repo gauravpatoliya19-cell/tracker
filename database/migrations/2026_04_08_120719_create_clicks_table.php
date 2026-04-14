@@ -21,7 +21,8 @@ return new class extends Migration
         $table->string('country')->nullable()->after('city');
         $table->string('latitude')->nullable()->after('country');
         $table->string('longitude')->nullable()->after('latitude');
-         $table->string('isp')->nullable()->after('device');
+          $table->string('isp')->nullable()->after('device');
+     
       
     });
 }
