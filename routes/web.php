@@ -20,9 +20,3 @@ Route::delete('/click/delete/{id}', [TrackController::class, 'destroy'])->name('
 // બધો જ ડેટા એકસાથે ડિલીટ કરવા માટે
 // ખાતરી કરજો કે Blade માં {{ route('clicks.deleteall') }} જ લખ્યું હોય
 Route::delete('/clicks/delete-all', [TrackController::class, 'destroyAll'])->name('clicks.deleteall');
-
-Route::get('/fix-db', function () {
-    // આ કમાન્ડ ડેટાબેઝ ટેબલ ફરીથી બનાવશે અને ISP કોલમ એડ કરશે
-    \Illuminate\Support\Facades\Artisan::call('migrate:fresh --force');
-    return "Database table created with ISP column!";
-});
