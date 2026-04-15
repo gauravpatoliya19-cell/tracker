@@ -1,45 +1,53 @@
-public function track(Request $request)
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Stevebauman\Location\Facades\Location;
+
+class TrackController extends Controller
 {
-    // ૧. સાચો IP મેળવો
-    $ip = $request->header('X-Forwarded-For')
-        ? explode(',', $request->header('X-Forwarded-For'))[0]
-        : $request->ip();
+    public function track(Request $request)
+    {
+        // ૧. સાચો IP મેળવો
+        $ip = $request->header('X-Forwarded-For')
+            ? explode(',', $request->header('X-Forwarded-For'))[0]
+            : $request->ip();
 
-    // ૨. સીટી અને કન્ટ્રી માટે લોકેશન ડેટા
-    $locationData = Location::get(trim($ip));
+        // ૨. સીટી અને કન્ટ્રી માટે લોકેશન ડેટા (IP બેઝ)
+        $locationData = Location::get(trim($ip));
 
-    // ૩. ISP મેળવવા માટે ડાયરેક્ટ API કોલ (આનાથી Unknown નહીં આવે)
-    $ispName = 'Unknown';
-    try {
-        // ip-api.com માંથી ISP ડેટા ખેંચવો
-        $apiUrl = "http://ip-api.com/json/" . trim($ip) . "?fields=isp";
-        $response = @file_get_contents($apiUrl);
-        $json = json_decode($response);
-        
-        if ($json && isset($json->isp)) {
-            $ispName = $json->isp;
-        }
-    } catch (\Exception $e) {
+        // ૩. ISP મેળવવા માટે API કોલ
         $ispName = 'Unknown';
+        try {
+            $apiUrl = "http://ip-api.com/json/" . trim($ip) . "?fields=isp";
+            $response = @file_get_contents($apiUrl);
+            $json = json_decode($response);
+            if ($json && isset($json->isp)) {
+                $ispName = $json->isp;
+            }
+        } catch (\Exception $e) {
+            $ispName = 'Unknown';
+        }
+
+        // ૪. ડેટાબેઝમાં એન્ટ્રી કરો
+        DB::table('clicks')->insert([
+            'ip'         => trim($ip),
+            'device'     => $request->header('User-Agent'),
+            'isp'        => $ispName,
+            'city'       => $locationData ? ($locationData->cityName ?? 'Unknown') : 'Unknown',
+            'country'    => $locationData ? ($locationData->countryName ?? 'Unknown') : 'Unknown',
+            'latitude'   => $locationData ? $locationData->latitude : null,
+            'longitude'  => $locationData ? $locationData->longitude : null,
+            'clicked_at' => now(),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        // ૫. સીધું ગૂગલ પર રીડાયરેક્ટ
+        return redirect('https://google.com');
     }
-
-    // ૪. ડેટાબેઝમાં એન્ટ્રી કરો
-    DB::table('clicks')->insert([
-        'ip'         => trim($ip),
-        'device'     => $request->header('User-Agent'),
-        'isp'        => $ispName, // અહીં હવે સાચું નામ આવશે
-        'city'       => $locationData ? ($locationData->cityName ?? 'Unknown') : 'Unknown',
-        'country'    => $locationData ? ($locationData->countryName ?? 'Unknown') : 'Unknown',
-        'latitude'   => $locationData ? $locationData->latitude : null,
-        'longitude'  => $locationData ? $locationData->longitude : null,
-        'clicked_at' => now(),
-        'created_at' => now(),
-        'updated_at' => now(),
-    ]);
-
-    return redirect('https://google.com');
-}
-
 
     public function dashboard(Request $request)
     {
