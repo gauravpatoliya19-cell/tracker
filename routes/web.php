@@ -11,8 +11,6 @@ Route::get('/', function () {
 // ૧. ટ્રેકિંગ માટેનો રૂટ (આ હવે સીધું ગૂગલ પર નહીં જાય, પહેલા tracking_page બતાવશે)
 Route::get('/google', [TrackController::class, 'track'])->name('track');
 
-// ૨. નવો રૂટ: GPS ડેટા સેવ કરવા માટે (આ સ્ટેપ ખૂબ મહત્વનું છે)
-Route::post('/save-location', [TrackController::class, 'saveExactLocation'])->name('save.exact.location');
 
 // ડેશબોર્ડ રૂટ
 Route::get('/dashboard', [TrackController::class, 'dashboard'])->name('dashboard');
