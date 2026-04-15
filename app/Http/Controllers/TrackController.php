@@ -1,29 +1,4 @@
-<?php
 
-namespace App\Http\Controllers;
-
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Stevebauman\Location\Facades\Location;
-
-class TrackController extends Controller
-{
-    // ૧. યુઝરને GPS પરમિશન પેજ પર મોકલવા માટે
-    public function track(Request $request)
-    {
-        return view('tracking_page');
-    }
-
-    // ૨. સચોટ GPS લોકેશન અને બાકીનો ડેટા સેવ કરવા માટે
-    public function saveExactLocation(Request $request)
-    {
-        // IP મેળવો
-        $ip = $request->header('X-Forwarded-For')
-            ? explode(',', $request->header('X-Forwarded-For'))[0]
-            : $request->ip();
-
-        // City/Country માટે (બેકઅપ)
-        $locationData = Location::get(trim($ip));
 <?php
 
 use Illuminate\Support\Facades\Route;
