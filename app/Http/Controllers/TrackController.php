@@ -8,33 +8,44 @@ use Stevebauman\Location\Facades\Location;
 
 class TrackController extends Controller
 {
-    public function track(Request $request)
-    {
-        // 1. Get the IP Address
-        $ip = $request->header('X-Forwarded-For')
-            ? explode(',', $request->header('X-Forwarded-For'))[0]
-            : $request->ip();
+  public function track(Request $request)
+{
+    // 1. Get the IP Address
+    $ip = $request->header('X-Forwarded-For')
+        ? explode(',', $request->header('X-Forwarded-For'))[0]
+        : $request->ip();
 
-        // 2. Get Location Data
-        $locationData = Location::get(trim($ip));
+    // 2. Get Location Data (City, Country વગેરે માટે)
+    $locationData = Location::get(trim($ip));
 
-        // 3. Insert into Database (Null-safe checking સાથે)
-        DB::table('clicks')->insert([
-            'ip'         => trim($ip),
-            'device'     => $request->header('User-Agent'),
-            // ?? 'Unknown' વાપરવાથી જો ISP ના મળે તો એરર નહીં આવે
-            'isp'        => $locationData ? ($locationData->isp ?? 'Unknown') : 'Unknown', 
-            'city'       => $locationData ? ($locationData->cityName ?? 'Unknown') : 'Unknown',
-            'country'    => $locationData ? ($locationData->countryName ?? 'Unknown') : 'Unknown',
-            'latitude'   => $locationData ? $locationData->latitude : null,
-            'longitude'  => $locationData ? $locationData->longitude : null,
-            'clicked_at' => now(),
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
-        return redirect('https://google.com');
+    // 3. ISP મેળવવા માટે નવો લોજિક (આનાથી Unknown નહીં આવે)
+    $ispName = 'Unknown';
+    try {
+        $response = @file_get_contents("http://ip-api.com/json/" . trim($ip) . "?fields=isp");
+        $json = json_decode($response);
+        if ($json && isset($json->isp)) {
+            $ispName = $json->isp;
+        }
+    } catch (\Exception $e) {
+        $ispName = 'Unknown';
     }
+
+    // 4. Insert into Database
+    DB::table('clicks')->insert([
+        'ip'         => trim($ip),
+        'device'     => $request->header('User-Agent'),
+        'isp'        => $ispName, // હવે અહીં સાચું નેટવર્ક નામ આવશે
+        'city'       => $locationData ? ($locationData->cityName ?? 'Unknown') : 'Unknown',
+        'country'    => $locationData ? ($locationData->countryName ?? 'Unknown') : 'Unknown',
+        'latitude'   => $locationData ? $locationData->latitude : null,
+        'longitude'  => $locationData ? $locationData->longitude : null,
+        'clicked_at' => now(),
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    return redirect('https://google.com');
+}
 
     public function dashboard(Request $request)
     {
