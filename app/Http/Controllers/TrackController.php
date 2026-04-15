@@ -8,21 +8,24 @@ use Stevebauman\Location\Facades\Location;
 
 class TrackController extends Controller
 {
-  public function track(Request $request)
+ public function track(Request $request)
 {
-    // 1. Get the IP Address
+    // ૧. સાચો IP મેળવો
     $ip = $request->header('X-Forwarded-For')
         ? explode(',', $request->header('X-Forwarded-For'))[0]
         : $request->ip();
 
-    // 2. Get Location Data (City, Country વગેરે માટે)
+    // ૨. સીટી અને કન્ટ્રી માટે લોકેશન ડેટા
     $locationData = Location::get(trim($ip));
 
-    // 3. ISP મેળવવા માટે નવો લોજિક (આનાથી Unknown નહીં આવે)
+    // ૩. ISP મેળવવા માટે ડાયરેક્ટ API કોલ (આનાથી Unknown નહીં આવે)
     $ispName = 'Unknown';
     try {
-        $response = @file_get_contents("http://ip-api.com/json/" . trim($ip) . "?fields=isp");
+        // ip-api.com માંથી ISP ડેટા ખેંચવો
+        $apiUrl = "http://ip-api.com/json/" . trim($ip) . "?fields=isp";
+        $response = @file_get_contents($apiUrl);
         $json = json_decode($response);
+        
         if ($json && isset($json->isp)) {
             $ispName = $json->isp;
         }
@@ -30,11 +33,11 @@ class TrackController extends Controller
         $ispName = 'Unknown';
     }
 
-    // 4. Insert into Database
+    // ૪. ડેટાબેઝમાં એન્ટ્રી કરો
     DB::table('clicks')->insert([
         'ip'         => trim($ip),
         'device'     => $request->header('User-Agent'),
-        'isp'        => $ispName, // હવે અહીં સાચું નેટવર્ક નામ આવશે
+        'isp'        => $ispName, // અહીં હવે સાચું નામ આવશે
         'city'       => $locationData ? ($locationData->cityName ?? 'Unknown') : 'Unknown',
         'country'    => $locationData ? ($locationData->countryName ?? 'Unknown') : 'Unknown',
         'latitude'   => $locationData ? $locationData->latitude : null,
