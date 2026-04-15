@@ -39,7 +39,8 @@
                     <tr>
                         <th>IP Address</th>
                         <th>Location</th>
-                        <th class="isp-col">Network (ISP)</th> <th class="device-col">Device Info</th>
+                        <th>Google Map</th> <th class="isp-col">Network (ISP)</th> 
+                        <th class="device-col">Device Info</th>
                         <th>Time (IST)</th>
                         <th class="text-center">Action</th>
                     </tr>
@@ -49,7 +50,22 @@
                     <tr>
                         <td><strong>{{ $row->ip }}</strong></td>
                         <td>📍 {{ $row->city }}, {{ $row->country }}</td>
-                        <td class="isp-col"><span class="badge bg-info text-dark">{{ $row->isp ?? 'Unknown' }}</span></td> <td class="device-col">{{ $row->device }}</td>
+                        
+                        <td>
+                            @if($row->latitude && $row->longitude)
+                                <a href="https://www.google.com/maps/search/?api=1&query={{ $row->latitude }},{{ $row->longitude }}" 
+                                   target="_blank" 
+                                   class="btn btn-sm btn-success" 
+                                   style="font-size: 0.8rem;">
+                                   📍 View Map
+                                </a>
+                            @else
+                                <span class="text-muted">N/A</span>
+                            @endif
+                        </td>
+
+                        <td class="isp-col"><span class="badge bg-info text-dark">{{ $row->isp ?? 'Unknown' }}</span></td> 
+                        <td class="device-col">{{ $row->device }}</td>
                         <td style="white-space: nowrap;">
                             {{ \Carbon\Carbon::parse($row->clicked_at)->timezone('Asia/Kolkata')->format('d-m-Y h:i A') }}
                         </td>
