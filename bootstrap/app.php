@@ -11,8 +11,8 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        // Render માટે સાચો IP મેળવવા માટે આટલું જ પૂરતું છે
-        $middleware->trustProxies(at: '*');
+        // આ લાઇન Render ના લોડ બેલેન્સરને ટ્રસ્ટ કરવા માટે છે
+        $middleware->trustProxies(at: '*'); 
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //
