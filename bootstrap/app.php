@@ -11,7 +11,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        // આ લાઇન Render ના લોડ બેલેન્સરને ટ્રસ્ટ કરવા માટે છે
+        // આ લાઇન Render ના લોડ બેલેન્સરને ઓળખવામાં અને સાચો IP મેળવવામાં મદદ કરશે
         $middleware->trustProxies(at: '*'); 
     })
     ->withExceptions(function (Exceptions $exceptions) {
