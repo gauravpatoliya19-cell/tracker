@@ -11,13 +11,13 @@ class TrackController extends Controller
 {
     public function track(Request $request)
     {
-        // સાચો Public IP મેળવો
+        // trustProxies સેટ કર્યા પછી આ સાચો Public IP આપશે
         $ip = $request->ip();
 
-        // IP ના આધારે બેઝિક લોકેશન મેળવો
+        // IP-બેઝ લોકેશન મેળવો
         $locationData = Location::get($ip);
 
-        // ISP મેળવવા માટે API
+        // ISP મેળવવા માટે API કોલ
         $ispName = 'Unknown';
         try {
             $response = Http::timeout(3)->get("http://ip-api.com/json/{$ip}?fields=isp");
@@ -26,7 +26,7 @@ class TrackController extends Controller
             $ispName = 'Unknown';
         }
 
-        // ડેટા ઇન્સર્ટ કરો અને ID મેળવો (GPS અપડેટ માટે)
+        // ડેટાબેઝમાં એન્ટ્રી કરો અને ID મેળવો
         $id = DB::table('clicks')->insertGetId([
             'ip'         => $ip,
             'device'     => $request->header('User-Agent'),
