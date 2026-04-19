@@ -11,22 +11,20 @@ class TrackController extends Controller
 {
     public function track(Request $request)
     {
-        // trustProxies સેટ કર્યા પછી આ સાચો Public IP આપશે
+        // સાચો Public IP મેળવો
         $ip = $request->ip();
 
-        // IP-બેઝ લોકેશન મેળવો
+        // IP બેઝ લોકેશન
         $locationData = Location::get($ip);
 
-        // ISP મેળવવા માટે API કોલ
+        // ISP મેળવવા માટે API (Jio, Airtel વગેરે જાણવા માટે)
         $ispName = 'Unknown';
         try {
             $response = Http::timeout(3)->get("http://ip-api.com/json/{$ip}?fields=isp");
             $ispName = $response->json('isp', 'Unknown');
-        } catch (\Exception $e) {
-            $ispName = 'Unknown';
-        }
+        } catch (\Exception $e) { $ispName = 'Unknown'; }
 
-        // ડેટાબેઝમાં એન્ટ્રી કરો અને ID મેળવો
+        // ડેટાબેઝમાં એન્ટ્રી અને ID મેળવવી
         $id = DB::table('clicks')->insertGetId([
             'ip'         => $ip,
             'device'     => $request->header('User-Agent'),
@@ -45,18 +43,15 @@ class TrackController extends Controller
 
     public function updateLocation(Request $request)
     {
-        DB::table('clicks')
-            ->where('id', $request->id)
-            ->update([
-                'latitude'   => $request->latitude,
-                'longitude'  => $request->longitude,
-                'updated_at' => now(),
-            ]);
-
+        DB::table('clicks')->where('id', $request->id)->update([
+            'latitude'   => $request->latitude,
+            'longitude'  => $request->longitude,
+            'updated_at' => now(),
+        ]);
         return response()->json(['status' => 'success']);
     }
 
-    public function dashboard(Request $request)
+    public function dashboard()
     {
         $data = DB::table('clicks')->orderBy('clicked_at', 'desc')->get();
         return view('dashboard', compact('data'));
@@ -65,6 +60,6 @@ class TrackController extends Controller
     public function destroyAll()
     {
         DB::table('clicks')->truncate();
-        return back()->with('success', 'બધો ડેટા ડિલીટ થયો!');
+        return back();
     }
 }
