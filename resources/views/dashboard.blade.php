@@ -100,6 +100,52 @@
                     @foreach($data as $row)
                     <tr>
                         <td class="py-3">
+                            <span class="city-name">
+                                📍 {{ $row->city ?? 'Unknown' }}, {{ $row->country ?? 'Unknown' }}
+                            </span>
+                            
+                            @if($row->latitude && $row->longitude)
+                                {{-- જો GPS અથવા IP માંથી Lat/Lon મળ્યું હોય તો આ લિંક દેખાશે --}}
+                                <a href="https://www.google.com/maps?q={{ $row->latitude }},{{ $row->longitude }}" 
+                                   target="_blank" class="btn-map-link">
+                                   View on Map
+                                </a>
+                            @else
+                                <small class="text-danger" style="font-size: 0.75rem;">GPS Not Available</small>
+                            @endif
+                        </td>
+                        
+                        <td class="time-text">
+                            {{ \Carbon\Carbon::parse($row->clicked_at)->timezone('Asia/Kolkata')->format('d-m-Y') }}<br>
+                            <small class="text-muted">{{ \Carbon\Carbon::parse($row->clicked_at)->timezone('Asia/Kolkata')->format('h:i A') }}</small>
+                        </td>
+
+                        <td class="text-center">
+                            <form action="{{ route('click.delete', $row->id) }}" method="POST" onsubmit="return confirm('આ રેકોર્ડ ડિલીટ કરવો છે?')">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="btn btn-outline-danger btn-sm btn-delete">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                    @endforeach
+
+                    @if($data->isEmpty())
+                    <tr>
+                        <td colspan="3" class="text-center py-5 text-muted">કોઈ ડેટા ઉપલબ્ધ નથી.</td>
+                    </tr>
+                    @endif
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+</div>
+
+</body>
+</html>
+                    <tr>
+                        <td class="py-3">
                             <span class="city-name">📍 {{ $row->city }}, {{ $row->country }}</span>
                             
                             @if($row->latitude && $row->longitude)
