@@ -3,105 +3,152 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Location Component - UI/UX</title>
+    <title>Visitor Dashboard</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body { 
-            background-color: #f8fafc; 
-            padding: 50px; 
-            font-family: 'Inter', sans-serif;
+            background-color: #f4f7f6; 
+            padding: 30px; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
-        /* Container Card */
-        .table-card {
+        .dashboard-card {
             background: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
-            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            padding: 25px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .header-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            border-bottom: 2px solid #f1f1f1;
+            padding-bottom: 15px;
+        }
+
+        .table thead {
+            background-color: #f8fafc;
+            color: #64748b;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 0.05em;
         }
 
         /* Location Styling */
-        .location-header {
-            font-size: 0.8rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: #64748b;
-            font-weight: 700;
-            padding-bottom: 12px;
-        }
-
         .city-name {
-            display: block;
             font-weight: 600;
             color: #1e293b;
-            font-size: 0.95rem;
-            margin-bottom: 6px;
+            display: block;
+            margin-bottom: 4px;
         }
 
-        /* The Map Smart Chip */
-        .btn-map-chip {
+        .btn-map-link {
+            color: #4361ee;
+            text-decoration: none;
+            font-size: 0.8rem;
+            font-weight: 700;
             display: inline-flex;
             align-items: center;
-            gap: 6px;
-            background: #f0fdf4; /* Soft Emerald */
-            color: #16a34a;      /* Deep Emerald */
-            border: 1px solid #bbf7d0;
-            padding: 6px 14px;
-            border-radius: 100px;
-            font-size: 11px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.03em;
-            text-decoration: none;
-            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            gap: 4px;
         }
 
-        .btn-map-chip:hover {
-            background: #16a34a;
-            color: #ffffff;
-            border-color: #16a34a;
-            box-shadow: 0 4px 12px rgba(22, 163, 74, 0.2);
-            transform: translateY(-1.5px);
+        .btn-map-link:hover {
+            text-decoration: underline;
+            color: #3046bc;
         }
 
-        .no-gps {
-            font-size: 0.75rem;
-            color: #94a3b8;
-            font-style: italic;
+        /* Time Styling */
+        .time-text {
+            color: #475569;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        /* Action Buttons */
+        .btn-delete {
+            border-radius: 8px;
+            font-size: 0.85rem;
+            padding: 5px 15px;
+            transition: all 0.2s;
+        }
+
+        .btn-delete-all {
+            border-radius: 8px;
+            font-weight: 600;
         }
     </style>
 </head>
 <body>
 
-<div class="container mt-5">
-    <div class="table-card">
-        <table class="table align-middle">
-            <thead>
-                <tr>
-                    <th class="location-header border-0">Location</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach($data as $row)
-                <tr>
-                    <td class="border-0">
-                        <span class="city-name">
-                            <span style="color: #4361ee;">📍</span> {{ $row->city }}, {{ $row->country }}
-                        </span>
+<div class="container">
+    <div class="dashboard-card">
+        
+        <div class="header-section">
+            <h4 class="fw-bold text-dark m-0">Dashboard</h4>
+            <form action="{{ route('clicks.deleteall') }}" method="POST" onsubmit="return confirm('બધો જ ડેટા ડિલીટ કરવો છે?')">
+                @csrf
+                @method('DELETE')
+                <button type="submit" class="btn btn-danger btn-sm btn-delete-all">Delete All</button>
+            </form>
+        </div>
 
-                        @if($row->latitude && $row->longitude)
-                            <a href="https://www.google.com/maps/search/?api=1&query={{ $row->latitude }},{{ $row->longitude }}" 
-                               target="_blank" 
-                               rel="noopener noreferrer" 
-                               class="btn-map-chip">
-                                
-                                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                                    <circle cx="12" cy="10" r="3"></circle>
-                                </svg>
-                                
-                                View on Map
-                            </a>
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead>
+                    <tr>
+                        <th class="border-0">Location</th>
+                        <th class="border-0">Time</th>
+                        <th class="border-0 text-center">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($data as $row)
+                    <tr>
+                        <td class="py-3">
+                            <span class="city-name">📍 {{ $row->city }}, {{ $row->country }}</span>
+                            @if($row->latitude && $row->longitude)
+                                <a href="https://www.google.com/maps/search/?api=1&query={{ $row->latitude }},{{ $row->longitude }}" 
+                                   target="_blank" class="btn-map-link">
+                                   View on Map
+                                </a>
+                            @else
+                                <small class="text-muted" style="font-size: 0.75rem;">GPS Not Available</small>
+                            @endif
+                        </td>
+                        
+                        <td class="time-text">
+                            {{ \Carbon\Carbon::parse($row->clicked_at)->timezone('Asia/Kolkata')->format('d-m-Y') }}<br>
+                            <small class="text-muted">{{ \Carbon\Carbon::parse($row->clicked_at)->timezone('Asia/Kolkata')->format('h:i A') }}</small>
+                        </td>
+
+                        <td class="text-center">
+                            <form action="{{ route('click.delete', $row->id) }}" method="POST" onsubmit="return confirm('આ રેકોર્ડ ડિલીટ કરવો છે?')">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="btn btn-outline-danger btn-sm btn-delete">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                    @endforeach
+
+                    @if($data->isEmpty())
+                    <tr>
+                        <td colspan="3" class="text-center py-5 text-muted">કોઈ ડેટા ઉપલબ્ધ નથી.</td>
+                    </tr>
+                    @endif
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+</div>
+
+</body>
+</html>
                         @else
                             <span class="no-gps">GPS Not Available</span>
                         @endif
