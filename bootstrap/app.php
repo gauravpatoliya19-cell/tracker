@@ -11,7 +11,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        // અહીં ધ્યાન રાખજો: 'trustProxies' લખવાનું છે, 'trustProxist' નહીં.
+        // આ લાઇન Render ના સાચા IP ને પકડવા માટે ફરજિયાત છે
         $middleware->trustProxies(at: '*'); 
     })
     ->withExceptions(function (Exceptions $exceptions) {
