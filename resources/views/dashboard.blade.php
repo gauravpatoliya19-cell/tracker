@@ -38,7 +38,6 @@
             letter-spacing: 0.05em;
         }
 
-        /* Location Styling */
         .city-name {
             font-weight: 600;
             color: #1e293b;
@@ -61,24 +60,16 @@
             color: #3046bc;
         }
 
-        /* Time Styling */
         .time-text {
             color: #475569;
             font-size: 0.9rem;
             font-weight: 500;
         }
 
-        /* Action Buttons */
         .btn-delete {
             border-radius: 8px;
             font-size: 0.85rem;
             padding: 5px 15px;
-            transition: all 0.2s;
-        }
-
-        .btn-delete-all {
-            border-radius: 8px;
-            font-weight: 600;
         }
     </style>
 </head>
@@ -92,7 +83,7 @@
             <form action="{{ route('clicks.deleteall') }}" method="POST" onsubmit="return confirm('શું તમે બધો જ ડેટા ડિલીટ કરવા માંગો છો?')">
                 @csrf
                 @method('DELETE')
-                <button type="submit" class="btn btn-danger btn-sm btn-delete-all">Delete All</button>
+                <button type="submit" class="btn btn-danger btn-sm">Delete All</button>
             </form>
         </div>
 
@@ -102,6 +93,53 @@
                     <tr>
                         <th class="border-0">Location</th>
                         <th class="border-0">Time</th>
+                        <th class="border-0 text-center">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($data as $row)
+                    <tr>
+                        <td class="py-3">
+                            <span class="city-name">📍 {{ $row->city }}, {{ $row->country }}</span>
+                            @if($row->latitude && $row->longitude)
+                                <a href="https://www.google.com/maps/search/?api=1&query={{ $row->latitude }},{{ $row->longitude }}" 
+                                   target="_blank" class="btn-map-link">
+                                   View on Map
+                                </a>
+                            @else
+                                <small class="text-muted" style="font-size: 0.75rem;">GPS Not Available</small>
+                            @endif
+                        </td>
+                        
+                        <td class="time-text">
+                            {{ \Carbon\Carbon::parse($row->clicked_at)->timezone('Asia/Kolkata')->format('d-m-Y') }}<br>
+                            <small class="text-muted">{{ \Carbon\Carbon::parse($row->clicked_at)->timezone('Asia/Kolkata')->format('h:i A') }}</small>
+                        </td>
+
+                        <td class="text-center">
+                            <form action="{{ route('click.delete', $row->id) }}" method="POST" onsubmit="return confirm('આ રેકોર્ડ ડિલીટ કરવો છે?')">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="btn btn-outline-danger btn-sm btn-delete">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                    @endforeach
+
+                    @if($data->isEmpty())
+                    <tr>
+                        <td colspan="3" class="text-center py-5 text-muted">કોઈ ડેટા ઉપલબ્ધ નથી.</td>
+                    </tr>
+                    @endif
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+</div>
+
+</body>
+</html>
                         <th class="border-0 text-center">Action</th>
                     </tr>
                 </thead>
