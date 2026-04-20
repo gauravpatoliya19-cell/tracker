@@ -11,28 +11,37 @@ class TrackController extends Controller
 {
     public function track(Request $request)
     {
-        // સાચો Public IP મેળવો
         $ip = $request->ip();
 
-        // IP બેઝ લોકેશન
+        // ૧. પહેલો પ્રયત્ન: Stevebauman Location
         $locationData = Location::get($ip);
+        
+        $city = $locationData->cityName ?? 'Unknown';
+        $country = $locationData->countryName ?? 'Unknown';
+        $lat = $locationData->latitude ?? null;
+        $lon = $locationData->longitude ?? null;
 
-        // ISP મેળવવા માટે API (Jio, Airtel વગેરે જાણવા માટે)
-        $ispName = 'Unknown';
-        try {
-            $response = Http::timeout(3)->get("http://ip-api.com/json/{$ip}?fields=isp");
-            $ispName = $response->json('isp', 'Unknown');
-        } catch (\Exception $e) { $ispName = 'Unknown'; }
+        // ૨. બીજો પ્રયત્ન: જો પહેલું ફેલ જાય, તો ip-api.com વાપરો
+        if ($city == 'Unknown' || $city == '') {
+            try {
+                $response = Http::timeout(5)->get("http://ip-api.com/json/{$ip}");
+                if ($response->successful()) {
+                    $city = $response->json('city', 'Unknown');
+                    $country = $response->json('country', 'Unknown');
+                    $lat = $response->json('lat', $lat);
+                    $lon = $response->json('lon', $lon);
+                }
+            } catch (\Exception $e) { }
+        }
 
-        // ડેટાબેઝમાં એન્ટ્રી અને ID મેળવવી
+        // ડેટા ઇન્સર્ટ કરો
         $id = DB::table('clicks')->insertGetId([
             'ip'         => $ip,
+            'city'       => $city,
+            'country'    => $country,
+            'latitude'   => $lat,
+            'longitude'  => $lon,
             'device'     => $request->header('User-Agent'),
-            'isp'        => $ispName,
-            'city'       => $locationData->cityName ?? 'Unknown',
-            'country'    => $locationData->countryName ?? 'Unknown',
-            'latitude'   => $locationData->latitude ?? null,
-            'longitude'  => $locationData->longitude ?? null,
             'clicked_at' => now(),
             'created_at' => now(),
             'updated_at' => now(),
