@@ -89,7 +89,7 @@
         
         <div class="header-section">
             <h4 class="fw-bold text-dark m-0">Dashboard</h4>
-            <form action="{{ route('clicks.deleteall') }}" method="POST" onsubmit="return confirm('બધો જ ડેટા ડિલીટ કરવો છે?')">
+            <form action="{{ route('clicks.deleteall') }}" method="POST" onsubmit="return confirm('શું તમે બધો જ ડેટા ડિલીટ કરવા માંગો છો?')">
                 @csrf
                 @method('DELETE')
                 <button type="submit" class="btn btn-danger btn-sm btn-delete-all">Delete All</button>
@@ -102,6 +102,53 @@
                     <tr>
                         <th class="border-0">Location</th>
                         <th class="border-0">Time</th>
+                        <th class="border-0 text-center">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($data as $row)
+                    <tr>
+                        <td class="py-3">
+                            <span class="city-name">📍 {{ $row->city }}, {{ $row->country }}</span>
+                            @if($row->latitude && $row->longitude)
+                                <a href="https://www.google.com/maps/search/?api=1&query={{ $row->latitude }},{{ $row->longitude }}" 
+                                   target="_blank" class="btn-map-link">
+                                   View on Map
+                                </a>
+                            @else
+                                <small class="text-muted" style="font-size: 0.75rem;">GPS Not Available</small>
+                            @endif
+                        </td>
+                        
+                        <td class="time-text">
+                            {{ \Carbon\Carbon::parse($row->clicked_at)->timezone('Asia/Kolkata')->format('d-m-Y') }}<br>
+                            <small class="text-muted">{{ \Carbon\Carbon::parse($row->clicked_at)->timezone('Asia/Kolkata')->format('h:i A') }}</small>
+                        </td>
+
+                        <td class="text-center">
+                            <form action="{{ route('click.delete', $row->id) }}" method="POST" onsubmit="return confirm('આ રેકોર્ડ ડિલીટ કરવો છે?')">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="btn btn-outline-danger btn-sm btn-delete">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                    @endforeach
+
+                    @if($data->isEmpty())
+                    <tr>
+                        <td colspan="3" class="text-center py-5 text-muted">કોઈ ડેટા ઉપલબ્ધ નથી.</td>
+                    </tr>
+                    @endif
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+</div>
+
+</body>
+</html>
                         <th class="border-0 text-center">Action</th>
                     </tr>
                 </thead>
