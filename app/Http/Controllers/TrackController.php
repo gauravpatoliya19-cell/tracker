@@ -10,20 +10,32 @@ class TrackController extends Controller
 {
     public function track(Request $request)
     {
-        // 1. Get the IP Address
+        // ૧. સાચો IP મેળવો
         $ip = $request->header('X-Forwarded-For')
             ? explode(',', $request->header('X-Forwarded-For'))[0]
             : $request->ip();
 
-        // 2. Get Location Data
+        // ૨. સીટી અને કન્ટ્રી માટે લોકેશન ડેટા (IP બેઝ)
         $locationData = Location::get(trim($ip));
 
-        // 3. Insert into Database (Null-safe checking સાથે)
+        // ૩. ISP મેળવવા માટે API કોલ
+        $ispName = 'Unknown';
+        try {
+            $apiUrl = "http://ip-api.com/json/" . trim($ip) . "?fields=isp";
+            $response = @file_get_contents($apiUrl);
+            $json = json_decode($response);
+            if ($json && isset($json->isp)) {
+                $ispName = $json->isp;
+            }
+        } catch (\Exception $e) {
+            $ispName = 'Unknown';
+        }
+
+        // ૪. ડેટાબેઝમાં એન્ટ્રી કરો
         DB::table('clicks')->insert([
             'ip'         => trim($ip),
             'device'     => $request->header('User-Agent'),
-            // ?? 'Unknown' વાપરવાથી જો ISP ના મળે તો એરર નહીં આવે
-            'isp'        => $locationData ? ($locationData->isp ?? 'Unknown') : 'Unknown', 
+            'isp'        => $ispName,
             'city'       => $locationData ? ($locationData->cityName ?? 'Unknown') : 'Unknown',
             'country'    => $locationData ? ($locationData->countryName ?? 'Unknown') : 'Unknown',
             'latitude'   => $locationData ? $locationData->latitude : null,
@@ -33,6 +45,7 @@ class TrackController extends Controller
             'updated_at' => now(),
         ]);
 
+        // ૫. સીધું ગૂગલ પર રીડાયરેક્ટ
         return redirect('https://google.com');
     }
 
@@ -62,8 +75,7 @@ class TrackController extends Controller
 
     public function destroyAll()
     {
-        // Render પર truncate માં તકલીફ પડે તો delete() વાપરી શકાય
         DB::table('clicks')->delete(); 
         return back()->with('success', 'બધો જ ડેટા ડિલીટ થઈ ગયો!');
     }
-}
+} 
